@@ -53,11 +53,11 @@ class ClusterEnv(py_environment.PyEnvironment):
         if action == 0:
             print('action 0')
             # moveJobs() <- finish one running job, update cluster states
+            # if no running jobs but jobs waiting to be scheduled -> huge Neg Reward and episode ends
         elif action == 1:
             print('action 1')
             # if invalid placement -> Huge Neg Reward and episode ends
-            # else place 1 ex in VM 1, update cluster states
-                #check for episode ends
+            # else place 1 ex in VM 1, update cluster states; check for episode ends
         elif action == 2:
             print('action 2')
         elif action == 3:
