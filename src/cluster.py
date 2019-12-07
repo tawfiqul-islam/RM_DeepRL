@@ -1,6 +1,7 @@
 import numpy as np
 from src import definitions as defs
 
+
 # cluster resource details
 
 features = 11
@@ -49,62 +50,63 @@ j3_time = 80
 #cluster_state_max = [vm0_cpu, vm0_mem, vm1_cpu, vm1_mem, vm2_cpu, vm2_mem, j_total, j_types, j_cpu_max, j_mem_max, j_ex_max]
 #cluster_state_init = [vm0_cpu, vm0_mem, vm1_cpu, vm1_mem, vm2_cpu, vm2_mem, 1, 1, j0_cpu, j0_mem, j0_ex]
 
-jobs = []
-vms = []
+JOBS = []
+VMS = []
 
 # cluster_state_init = []
 cluster_state_init = []
 cluster_state_min = []
 cluster_state_max = []
+#job_queue = PriorityQueue()
 
 
-def gen_cluster_state_init():
-    np.empty(cluster_state_init)
+def gen_cluster_state(job_idx, jobs, vms):
+    cluster_state = []
     i = 0
     while i < len(vms):
-        cluster_state_init.append(vms[i].cpu)
-        cluster_state_init.append(vms[i].mem)
+        cluster_state.append(vms[i].cpu_now)
+        cluster_state.append(vms[i].mem_now)
         i += 1
-    cluster_state_init.append(jobs[0].id)
-    cluster_state_init.append(jobs[0].type)
-    cluster_state_init.append(jobs[0].cpu)
-    cluster_state_init.append(jobs[0].mem)
-    cluster_state_init.append(jobs[0].ex)
+    cluster_state.append(jobs[job_idx].id)
+    cluster_state.append(jobs[job_idx].type)
+    cluster_state.append(jobs[job_idx].cpu)
+    cluster_state.append(jobs[job_idx].mem)
+    cluster_state.append(jobs[job_idx].ex-jobs[job_idx].ex_placed)
+    return cluster_state
 
 
 def gen_cluster_state_min():
-    np.empty(cluster_state_min)
     i = 0
-    while i < len(vms):
+    while i < len(VMS):
         cluster_state_min.append(0)
         cluster_state_min.append(0)
         i += 1
-    cluster_state_min.append(1)
-    cluster_state_min.append(1)
+    cluster_state_min.append(0)
+    cluster_state_min.append(0)
     cluster_state_min.append(j_cpu_min)
     cluster_state_min.append(j_mem_min)
     cluster_state_min.append(j_ex_min)
 
 
 def gen_cluster_state_max():
-    np.empty(cluster_state_max)
     i = 0
-    while i < len(vms):
-        cluster_state_max.append(vms[i].cpu)
-        cluster_state_max.append(vms[i].mem)
+    while i < len(VMS):
+        cluster_state_max.append(VMS[i].cpu)
+        cluster_state_max.append(VMS[i].mem)
         i += 1
-    cluster_state_max.append(j_total)
-    cluster_state_max.append(j_types)
+    cluster_state_max.append(j_total-1)
+    cluster_state_max.append(j_types-1)
     cluster_state_max.append(j_cpu_max)
     cluster_state_max.append(j_mem_max)
     cluster_state_max.append(j_ex_max)
 
 
 def gen_jobs_simple():
-    np.empty(jobs)
-    jobs.append(defs.JOB(0, 1, 1, j1_cpu, j1_mem, j1_ex, j1_time))
-    jobs.append(defs.JOB(50, 2, 2, j2_cpu, j2_mem, j2_ex, j2_time))
-    jobs.append(defs.JOB(80, 3, 3, j3_cpu, j3_mem, j3_ex, j3_time))
+    global JOBS
+    JOBS = []
+    JOBS.append(defs.JOB(0, 0, 0, j1_cpu, j1_mem, j1_ex, j1_time))
+    JOBS.append(defs.JOB(50, 1, 1, j2_cpu, j2_mem, j2_ex, j2_time))
+    JOBS.append(defs.JOB(80, 2, 2, j3_cpu, j3_mem, j3_ex, j3_time))
 
 
 def init_jobs():
@@ -112,18 +114,23 @@ def init_jobs():
 
 
 def init_vms():
-    np.empty(vms)
+    global VMS
+    VMS = []
     for i in range(vm1_total):
-        vms.append(defs.VM(vm1_cpu, vm1_mem, vm1_price))
-    for i in range(vm2_total):
-        vms.append(defs.VM(vm2_cpu, vm2_mem, vm2_price))
-    for i in range(vm3_total):
-        vms.append(defs.VM(vm3_cpu, vm3_mem, vm3_price))
+        VMS.append(defs.VM(len(VMS), vm1_cpu, vm1_mem, vm1_price))
+    for j in range(vm2_total):
+        VMS.append(defs.VM(len(VMS), vm2_cpu, vm2_mem, vm2_price))
+    for k in range(vm3_total):
+        VMS.append(defs.VM(len(VMS), vm3_cpu, vm3_mem, vm3_price))
 
 
 def init_cluster():
     init_jobs()
     init_vms()
+    global cluster_state_init
+    cluster_state_init = gen_cluster_state(0, JOBS, VMS)
+    gen_cluster_state_min()
+    gen_cluster_state_max()
 
 
 #init_cluster()
