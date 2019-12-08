@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import logging
 import abc
 import tensorflow as tf
 import numpy as np
@@ -19,11 +20,14 @@ from tf_agents.trajectories import time_step as ts
 
 tf.compat.v1.enable_v2_behavior()
 
+logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w')
+# logging.debug('This will get logged to a file')
 
 class ClusterEnv(py_environment.PyEnvironment):
 
     def __init__(self):
         cluster.init_cluster()
+        # logging.debug('length cluster_state_min ', len(cluster.cluster_state_min))
         self._action_spec = array_spec.BoundedArraySpec(
             shape=(), dtype=np.int32, minimum=0, maximum=3, name='action')
         self._observation_spec = array_spec.BoundedArraySpec(
@@ -38,6 +42,7 @@ class ClusterEnv(py_environment.PyEnvironment):
         self.clock = self.jobs[0].arrival_time
         self.job_idx = 0
         self.job_queue = PriorityQueue()
+        self.episode_success = False
 
     def action_spec(self):
         return self._action_spec
@@ -55,11 +60,12 @@ class ClusterEnv(py_environment.PyEnvironment):
         self.clock = self.jobs[0].arrival_time
         self.job_idx = 0
         self.job_queue = PriorityQueue()
+        self.episode_success = False
         return ts.restart(np.array(self._state, dtype=np.int32))
 
     def _step(self, action):
 
-        print('current cluster state: ', self._state)
+        # logging.debug("Current Cluster State: {}".format(self._state))
         if self._episode_ended:
             # The last action ended the episode. Ignore the current action and start
             # a new episode.
@@ -69,22 +75,25 @@ class ClusterEnv(py_environment.PyEnvironment):
             raise ValueError('`action` should in 0 to 3.')
 
         elif action == 0:
-            print('action 0, clock', self.clock)
+            logging.debug("CLOCK: {}: Action: {}".format(self.clock, action))
             # penalty for partial placement
             if self.jobs[self.job_idx].ex_placed > 0:
                 self.reward += (-1000)
                 self._episode_ended = True
+                logging.debug("CLOCK: {}: Partial Executor Placement for a Job. Episode Ended".format(self.clock))
             # if no running jobs but jobs waiting to be scheduled -> huge Neg Reward and episode ends
             elif self.job_queue.empty():
                 self.reward += (-1000)
                 self._episode_ended = True
+                logging.debug("CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended".format(self.clock))
             # finishOneJob() <- finish one running job, update cluster states-> "self._state"
             else:
                 _, y = self.job_queue.get()
+                self.clock = y.finish_time
                 self.finish_one_job(y)
             # TODO add check for large job which does not fit in the cluster
         else:
-            print('action ', action, ' clock ', self.clock)
+            logging.debug("CLOCK: {}: Action: {}".format(self.clock, action))
             # if valid placement, place 1 ex in the VM chosen, update cluster states -> "self._state";
             # check for episode end  -> update self._episode_ended
             if self.execute_placement(action):
@@ -94,13 +103,16 @@ class ClusterEnv(py_environment.PyEnvironment):
             else:
                 self.reward += (-1000)
                 self._episode_ended = True
-                print('bad action, episode ended')
+                logging.debug("CLOCK: {}: Invalid Executor Placement, Episode Ended".format(self.clock))
+
             # self._episode_ended = True -> when last job's last executor is placed or bad action
 
             # self._state = generate new state after executing the current action
-
         if self._episode_ended:
-            print('episode ended ')
+
+            if self.episode_success:
+                self.reward += 50
+                logging.debug("CLOCK: {}: ****** Episode ended Successfully!!!!!!!! ".format(self.clock))
             self.calculate_reward()
             return ts.termination(np.array(self._state, dtype=np.int32), self.reward)
 
@@ -111,7 +123,6 @@ class ClusterEnv(py_environment.PyEnvironment):
     def finish_one_job(self, finished_job):
         finished_job.finished = True
         finished_job.running = False
-        self.clock = finished_job.finish_time
         for i in range(len(finished_job.ex_placement_list)):
             vm = finished_job.ex_placement_list[i]
             vm.cpu_now += finished_job.cpu
@@ -119,8 +130,8 @@ class ClusterEnv(py_environment.PyEnvironment):
             self.vms[vm.id] = vm
         self._state = cluster.gen_cluster_state(self.job_idx, self.jobs,
                                                 self.vms)
-        print('finished execution of job ', finished_job.id)
-        print('current cluster state: ', self._state, ' clock ', self.clock)
+        logging.debug("CLOCK: {}: Finished execution of job: {}".format(self.clock, finished_job.id))
+        logging.debug("CLOCK: {}: Current Cluster State: {}".format(self.clock, self._state))
 
     def execute_placement(self, action):
         current_job = self.jobs[self.job_idx]
@@ -134,20 +145,24 @@ class ClusterEnv(py_environment.PyEnvironment):
             current_job.finish_time = self.clock + current_job.duration
             self.job_queue.put((current_job.finish_time, current_job))
 
+            if current_job.finish_time > vm.stop_use_clock:
+                vm.used_time += (current_job.finish_time - vm.stop_use_clock)
+                vm.stop_use_clock = current_job.finish_time
+
         current_job.ex_placed += 1
         current_job.ex_placement_list.append(vm)
         vm.cpu_now -= current_job.cpu
         vm.mem_now -= current_job.mem
 
-        if current_job.finish_time > vm.stop_use_clock:
-            vm.stop_use_clock = current_job.finish_time
-            vm.used_time += (vm.stop_use_clock - current_job.finish_time)
-
         self.vms[vm.id] = vm
         self.jobs[self.job_idx] = current_job
 
         if current_job.ex_placed == current_job.ex:
-            print('finished placement of job ', current_job.id)
+            logging.debug("CLOCK: {}: Finished placement of job: {}".format(self.clock, current_job.id))
+            if self.job_idx+1 == len(self.jobs):
+                self._episode_ended = True
+                self.episode_success = True
+                return True
             self.job_idx += 1
             self.clock = self.jobs[self.job_idx].arrival_time
 
@@ -163,7 +178,6 @@ class ClusterEnv(py_environment.PyEnvironment):
 
         self._state = cluster.gen_cluster_state(self.job_idx, self.jobs,
                                                 self.vms)
-        # print('current cluster state: ', self._state)
         return True
 
     def check_episode_end(self):
@@ -174,26 +188,12 @@ class ClusterEnv(py_environment.PyEnvironment):
     def calculate_reward(self):
         for i in range(len(self.vms)):
             self.reward -= (self.vms[i].price * self.vms[i].used_time)
-        print('reward: ', self.reward, ' \n\n')
+            print('vm: ', i, ' price: ', self.vms[i].price, ' time: ', self.vms[i].used_time)
+        logging.debug("Episode Reward: {}\n\n".format(self.reward))
 
 
-environment = ClusterEnv()
-utils.validate_py_environment(environment, episodes=15)
-#
-# get_new_card_action = 0
-# end_round_action = 1
-#
 # environment = ClusterEnv()
-# time_step = environment.reset()
-# print(time_step)
-# cumulative_reward = time_step.reward
-#
-# for _ in range(3):
-#     time_step = environment.step(get_new_card_action)
-#     print(time_step)
-#     cumulative_reward += time_step.reward
-#
-# time_step = environment.step(end_round_action)
-# print(time_step)
-# cumulative_reward += time_step.reward
-# print('Final Reward = ', cumulative_reward)
+# environment2 = ClusterEnv()
+
+# environment = ClusterEnv()
+# utils.validate_py_environment(environment, episodes=1000)

@@ -76,29 +76,33 @@ def gen_cluster_state(job_idx, jobs, vms):
 
 
 def gen_cluster_state_min():
+    cluster_state = []
     i = 0
     while i < len(VMS):
-        cluster_state_min.append(0)
-        cluster_state_min.append(0)
+        cluster_state.append(0)
+        cluster_state.append(0)
         i += 1
-    cluster_state_min.append(0)
-    cluster_state_min.append(0)
-    cluster_state_min.append(j_cpu_min)
-    cluster_state_min.append(j_mem_min)
-    cluster_state_min.append(j_ex_min)
+    cluster_state.append(0)
+    cluster_state.append(0)
+    cluster_state.append(j_cpu_min)
+    cluster_state.append(j_mem_min)
+    cluster_state.append(j_ex_min)
+    return cluster_state
 
 
 def gen_cluster_state_max():
+    cluster_state = []
     i = 0
     while i < len(VMS):
-        cluster_state_max.append(VMS[i].cpu)
-        cluster_state_max.append(VMS[i].mem)
+        cluster_state.append(VMS[i].cpu)
+        cluster_state.append(VMS[i].mem)
         i += 1
-    cluster_state_max.append(j_total-1)
-    cluster_state_max.append(j_types-1)
-    cluster_state_max.append(j_cpu_max)
-    cluster_state_max.append(j_mem_max)
-    cluster_state_max.append(j_ex_max)
+    cluster_state.append(j_total-1)
+    cluster_state.append(j_types-1)
+    cluster_state.append(j_cpu_max)
+    cluster_state.append(j_mem_max)
+    cluster_state.append(j_ex_max)
+    return cluster_state
 
 
 def gen_jobs_simple():
@@ -128,9 +132,11 @@ def init_cluster():
     init_jobs()
     init_vms()
     global cluster_state_init
+    global cluster_state_max
+    global cluster_state_min
     cluster_state_init = gen_cluster_state(0, JOBS, VMS)
-    gen_cluster_state_min()
-    gen_cluster_state_max()
+    cluster_state_min = gen_cluster_state_min()
+    cluster_state_max = gen_cluster_state_max()
 
 
 #init_cluster()

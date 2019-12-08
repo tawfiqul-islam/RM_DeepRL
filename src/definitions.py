@@ -26,4 +26,7 @@ class JOB:
         self.running = False
         self.finished = False
 
+    def __lt__(self, other):
+        return self.finish_time < other.finish_time
+
 

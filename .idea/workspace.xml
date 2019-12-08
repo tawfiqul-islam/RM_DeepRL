@@ -2,10 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="516978ba-39d0-4276-b4f9-389721d6e7f8" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/gridworld.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cardGameSimulate.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rm_dqn_tfagent.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cluster.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cluster.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/definitions.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/definitions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dqn_tfagent.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/dqn_tfagent.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rm_environment.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/rm_environment.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -47,29 +49,7 @@
       <recent name="$PROJECT_DIR$/src" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.VM_Cluster_Environemnt">
-    <configuration name="CardGameEnvironment" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="RM_DeepRL" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/CardGameEnvironment.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Python.dqn_tfagent">
     <configuration name="VM_Cluster_Environemnt" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="RM_DeepRL" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -114,7 +94,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="cluster" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="cardGameSimulate" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="RM_DeepRL" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -124,7 +104,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/cluster.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/cardGameSimulate.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -174,13 +154,32 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="rm_dqn_tfagent" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="RM_DeepRL" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/rm_dqn_tfagent.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.VM_Cluster_Environemnt" />
-        <item itemvalue="Python.gridworld" />
-        <item itemvalue="Python.cluster" />
-        <item itemvalue="Python.CardGameEnvironment" />
         <item itemvalue="Python.dqn_tfagent" />
+        <item itemvalue="Python.VM_Cluster_Environemnt" />
+        <item itemvalue="Python.rm_dqn_tfagent" />
+        <item itemvalue="Python.cardGameSimulate" />
+        <item itemvalue="Python.gridworld" />
       </list>
     </recent_temporary>
   </component>
@@ -208,7 +207,7 @@
       <updated>1575524490287</updated>
       <workItem from="1575524491533" duration="5134000" />
       <workItem from="1575608557332" duration="33000" />
-      <workItem from="1575608622909" duration="41948000" />
+      <workItem from="1575608622909" duration="56256000" />
     </task>
     <task id="LOCAL-00001" summary="2nd commit">
       <created>1575525626156</created>
@@ -259,7 +258,14 @@
       <option name="project" value="LOCAL" />
       <updated>1575624370021</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="implemented env action_steps">
+      <created>1575720291382</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1575720291382</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -284,37 +290,42 @@
     <MESSAGE value="environments added" />
     <MESSAGE value="vms and job synthetic added" />
     <MESSAGE value="fixed flow logic" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixed flow logic" />
+    <MESSAGE value="implemented env action_steps" />
+    <option name="LAST_COMMIT_MESSAGE" value="implemented env action_steps" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="513" y="143" width="951" height="818" key="CommitChangelistDialog2" timestamp="1575720290294">
+    <state x="726" y="301" width="524" height="502" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1575780788893">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="513" y="143" width="951" height="818" key="CommitChangelistDialog2/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575720290294" />
-    <state width="1807" height="246" key="GridCell.Tab.0.bottom" timestamp="1575720187547">
+    <state x="726" y="301" width="524" height="502" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575780788893" />
+    <state x="513" y="143" width="951" height="818" key="CommitChangelistDialog2" timestamp="1575780835018">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="246" key="GridCell.Tab.0.bottom/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575720187547" />
-    <state width="1807" height="246" key="GridCell.Tab.0.center" timestamp="1575720187547">
+    <state x="513" y="143" width="951" height="818" key="CommitChangelistDialog2/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575780835018" />
+    <state width="1807" height="297" key="GridCell.Tab.0.bottom" timestamp="1575779137087">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="246" key="GridCell.Tab.0.center/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575720187547" />
-    <state width="1807" height="246" key="GridCell.Tab.0.left" timestamp="1575720187547">
+    <state width="1807" height="297" key="GridCell.Tab.0.bottom/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575779137087" />
+    <state width="1807" height="297" key="GridCell.Tab.0.center" timestamp="1575779137087">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="246" key="GridCell.Tab.0.left/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575720187547" />
-    <state width="1807" height="246" key="GridCell.Tab.0.right" timestamp="1575720187547">
+    <state width="1807" height="297" key="GridCell.Tab.0.center/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575779137087" />
+    <state width="1807" height="297" key="GridCell.Tab.0.left" timestamp="1575779137087">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="246" key="GridCell.Tab.0.right/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575720187547" />
+    <state width="1807" height="297" key="GridCell.Tab.0.left/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575779137087" />
+    <state width="1807" height="297" key="GridCell.Tab.0.right" timestamp="1575779137087">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="297" key="GridCell.Tab.0.right/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575779137087" />
     <state x="482" y="187" key="SettingsEditor" timestamp="1575608852429">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
     <state x="482" y="187" key="SettingsEditor/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575608852429" />
-    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2" timestamp="1575624377552">
+    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2" timestamp="1575720293314">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575624377552" />
+    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575720293314" />
     <state x="549" y="397" key="com.intellij.ide.util.TipDialog" timestamp="1575608622006">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
@@ -325,8 +336,8 @@
     <state x="761" y="472" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/1920.301.1080.1920/67.27.1853.1053/3000.28.1920.1080@67.27.1853.1053" timestamp="1575701017002" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/RM_DeepRL$dqn_tfagent.coverage" NAME="dqn_tfagent Coverage Results" MODIFIED="1575527197574" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/RM_DeepRL$dqn_tfagent.coverage" NAME="dqn_tfagent Coverage Results" MODIFIED="1575779137081" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/RM_DeepRL$CardGameEnvironment.coverage" NAME="CardGameEnvironment Coverage Results" MODIFIED="1575528007633" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-    <SUITE FILE_PATH="coverage/RM_DeepRL$VM_Cluster_Environemnt.coverage" NAME="VM_Cluster_Environemnt Coverage Results" MODIFIED="1575720187532" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/RM_DeepRL$VM_Cluster_Environemnt.coverage" NAME="VM_Cluster_Environemnt Coverage Results" MODIFIED="1575777090040" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>

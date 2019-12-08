@@ -14,6 +14,7 @@ from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import suite_gym
 from tf_agents.environments import tf_py_environment
+from src.rm_environment import ClusterEnv
 from tf_agents.eval import metric_utils
 from tf_agents.metrics import tf_metrics
 from tf_agents.networks import q_network
@@ -36,8 +37,10 @@ def compute_avg_return(environment, policy, num_episodes=10):
         time_step = environment.reset()
         episode_return = 0.0
 
+        print('\n\n evaluation started \n')
         while not time_step.is_last():
             action_step = policy.action(time_step)
+            print('action: ', action_step.action)
             time_step = environment.step(action_step.action)
             episode_return += time_step.reward
         total_return += episode_return
@@ -47,7 +50,7 @@ def compute_avg_return(environment, policy, num_episodes=10):
 
 
 # ***Hyperparameters***
-num_iterations = 20000  # @param {type:"integer"}
+num_iterations = 50000  # @param {type:"integer"}
 
 initial_collect_steps = 1000  # @param {type:"integer"}
 collect_steps_per_iteration = 1  # @param {type:"integer"}
@@ -61,12 +64,15 @@ num_eval_episodes = 10  # @param {type:"integer"}
 eval_interval = 1000  # @param {type:"integer"}
 
 # *** Environment***
-env_name = 'CartPole-v0'
-env = suite_gym.load(env_name)
+#env_name = 'CartPole-v0'
+#env = suite_gym.load(env_name)
 
 # 2 environments, 1 for training and 1 for evaluation
-train_py_env = suite_gym.load(env_name)
-eval_py_env = suite_gym.load(env_name)
+#train_py_env = suite_gym.load(env_name)
+#eval_py_env = suite_gym.load(env_name)
+
+train_py_env = ClusterEnv()
+eval_py_env = ClusterEnv()
 
 # converting pyenv to tfenv
 train_env = tf_py_environment.TFPyEnvironment(train_py_env)
@@ -83,7 +89,7 @@ q_net = q_network.QNetwork(
 
 optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
 
-train_step_counter = tf.Variable(0)
+train_step_counter = tf.compat.v1.Variable(0)
 
 agent = dqn_agent.DqnAgent(
     train_env.time_step_spec(),
@@ -171,5 +177,5 @@ iterations = range(0, num_iterations + 1, eval_interval)
 plt.plot(iterations, returns)
 plt.ylabel('Average Return')
 plt.xlabel('Iterations')
-plt.ylim(top=250)
+#plt.ylim(top=250)
 plt.show()
