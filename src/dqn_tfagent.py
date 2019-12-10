@@ -1,12 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-import base64
-import imageio
-import IPython
-import matplotlib
 import matplotlib.pyplot as plt
-import PIL.Image
-import pyvirtualdisplay
 
 import tensorflow as tf
 
@@ -50,7 +44,7 @@ def compute_avg_return(environment, policy, num_episodes=10):
 
 
 # ***Hyperparameters***
-num_iterations = 50000  # @param {type:"integer"}
+num_iterations = 20000  # @param {type:"integer"}
 
 initial_collect_steps = 1000  # @param {type:"integer"}
 collect_steps_per_iteration = 1  # @param {type:"integer"}
