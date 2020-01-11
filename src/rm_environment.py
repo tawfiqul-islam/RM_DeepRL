@@ -113,7 +113,7 @@ class ClusterEnv(py_environment.PyEnvironment):
         if self._episode_ended:
 
             if self.episode_success:
-                self.reward = 100
+                self.reward += 100
                 logging.debug("CLOCK: {}: ****** Episode ended Successfully!!!!!!!! ".format(self.clock))
             # self.calculate_reward()
             return ts.termination(np.array(self._state, dtype=np.int32), self.reward)
@@ -160,7 +160,7 @@ class ClusterEnv(py_environment.PyEnvironment):
         self.jobs[self.job_idx] = current_job
 
         if current_job.ex_placed == current_job.ex:
-            self.reward = 10
+            #self.reward = 10
             logging.debug("CLOCK: {}: Finished placement of job: {}".format(self.clock, current_job.id))
             if self.job_idx+1 == len(self.jobs):
                 self._episode_ended = True

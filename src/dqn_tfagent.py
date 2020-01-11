@@ -38,6 +38,7 @@ def compute_avg_return(environment, policy, num_episodes=10):
             time_step = environment.step(action_step.action)
             episode_return += time_step.reward
         total_return += episode_return
+        print('episode return: ', episode_return)
 
     avg_return = total_return / num_episodes
     return avg_return.numpy()[0]
