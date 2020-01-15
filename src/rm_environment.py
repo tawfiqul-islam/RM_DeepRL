@@ -21,6 +21,8 @@ from tf_agents.trajectories import time_step as ts
 tf.compat.v1.enable_v2_behavior()
 
 logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w')
+
+
 # logging.debug('This will get logged to a file')
 
 class ClusterEnv(py_environment.PyEnvironment):
@@ -85,7 +87,8 @@ class ClusterEnv(py_environment.PyEnvironment):
             elif self.job_queue.empty():
                 self.reward = (-200)
                 self._episode_ended = True
-                logging.debug("CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended".format(self.clock))
+                logging.debug(
+                    "CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended".format(self.clock))
             # finishOneJob() <- finish one running job, update cluster states-> "self._state"
             else:
                 self.reward = -1
@@ -98,7 +101,7 @@ class ClusterEnv(py_environment.PyEnvironment):
             # if valid placement, place 1 ex in the VM chosen, update cluster states -> "self._state";
             # check for episode end  -> update self._episode_ended
             if self.execute_placement(action):
-                #print('placement successful, clock: ', self.clock)
+                # print('placement successful, clock: ', self.clock)
                 self.reward = 5
                 self.check_episode_end()
             # if invalid placement -> Huge Neg Reward and episode ends
@@ -115,7 +118,7 @@ class ClusterEnv(py_environment.PyEnvironment):
             if self.episode_success:
                 self.reward += 100
                 logging.debug("CLOCK: {}: ****** Episode ended Successfully!!!!!!!! ".format(self.clock))
-            # self.calculate_reward()
+                self.calculate_vm_cost()
             return ts.termination(np.array(self._state, dtype=np.int32), self.reward)
 
         else:
@@ -160,9 +163,9 @@ class ClusterEnv(py_environment.PyEnvironment):
         self.jobs[self.job_idx] = current_job
 
         if current_job.ex_placed == current_job.ex:
-            #self.reward = 10
+            # self.reward = 10
             logging.debug("CLOCK: {}: Finished placement of job: {}".format(self.clock, current_job.id))
-            if self.job_idx+1 == len(self.jobs):
+            if self.job_idx + 1 == len(self.jobs):
                 self._episode_ended = True
                 self.episode_success = True
                 return True
@@ -188,12 +191,13 @@ class ClusterEnv(py_environment.PyEnvironment):
         if self.job_idx + 1 == len(self.jobs) and current_job.ex == current_job.ex_placed:
             self._episode_ended = True
 
-    def calculate_reward(self):
+    def calculate_vm_cost(self):
+        cost = 0
         for i in range(len(self.vms)):
-            self.reward -= (self.vms[i].price * self.vms[i].used_time)
-            print('vm: ', i, ' price: ', self.vms[i].price, ' time: ', self.vms[i].used_time)
-        logging.debug("Episode Reward: {}\n\n".format(self.reward))
-
+            cost += (self.vms[i].price * self.vms[i].used_time)
+            # print('vm: ', i, ' price: ', self.vms[i].price, ' time: ', self.vms[i].used_time)
+        logging.debug("\n***Episode VM Cost: {}\n\n".format(cost))
+        return cost
 
 # environment = ClusterEnv()
 # environment2 = ClusterEnv()
