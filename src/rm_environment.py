@@ -74,7 +74,7 @@ class ClusterEnv(py_environment.PyEnvironment):
             return self.reset()
 
         if action > 3 or action < 0:
-            raise ValueError('`action` should in 0 to 3.')
+            raise ValueError('`action` should be in 0 to 3.')
 
         elif action == 0:
             logging.debug("CLOCK: {}: Action: {}".format(self.clock, action))
@@ -82,16 +82,15 @@ class ClusterEnv(py_environment.PyEnvironment):
             if self.jobs[self.job_idx].ex_placed > 0:
                 self.reward = (-200)
                 self._episode_ended = True
-                logging.debug("CLOCK: {}: Partial Executor Placement for a Job. Episode Ended".format(self.clock))
+                logging.debug("CLOCK: {}: Partial Executor Placement for a Job. Episode Ended\n\n".format(self.clock))
             # if no running jobs but jobs waiting to be scheduled -> huge Neg Reward and episode ends
             elif self.job_queue.empty():
                 self.reward = (-200)
                 self._episode_ended = True
-                logging.debug(
-                    "CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended".format(self.clock))
+                logging.debug("CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended\n\n".format(self.clock))
             # finishOneJob() <- finish one running job, update cluster states-> "self._state"
             else:
-                self.reward = -1
+                self.reward = -10
                 _, y = self.job_queue.get()
                 self.clock = y.finish_time
                 self.finish_one_job(y)
@@ -102,13 +101,13 @@ class ClusterEnv(py_environment.PyEnvironment):
             # check for episode end  -> update self._episode_ended
             if self.execute_placement(action):
                 # print('placement successful, clock: ', self.clock)
-                self.reward = 5
+                self.reward = 1
                 self.check_episode_end()
             # if invalid placement -> Huge Neg Reward and episode ends
             else:
                 self.reward = (-200)
                 self._episode_ended = True
-                logging.debug("CLOCK: {}: Invalid Executor Placement, Episode Ended".format(self.clock))
+                logging.debug("CLOCK: {}: Invalid Executor Placement, Episode Ended\n\n".format(self.clock))
 
             # self._episode_ended = True -> when last job's last executor is placed or bad action
 
@@ -116,14 +115,22 @@ class ClusterEnv(py_environment.PyEnvironment):
         if self._episode_ended:
 
             if self.episode_success:
-                self.reward += 100
-                logging.debug("CLOCK: {}: ****** Episode ended Successfully!!!!!!!! ".format(self.clock))
-                self.calculate_vm_cost()
+                # while True:
+                #     if self.job_queue.empty():
+                #         break
+                #     cur_clock, next_finished_job = self.job_queue.get()
+                #     self.clock = cur_clock
+                #     self.finish_one_job(next_finished_job)
+
+                epi_cost = self.calculate_vm_cost()
+                self.reward = 1+100/(epi_cost/1440)
+                logging.debug("CLOCK: {}: ****** Episode ended Successfully!!!!!!!! \n\n".format(self.clock))
+
             return ts.termination(np.array(self._state, dtype=np.int32), self.reward)
 
         else:
             return ts.transition(
-                np.array(self._state, dtype=np.int32), reward=self.reward, discount=0.9)
+                np.array(self._state, dtype=np.int32), reward=self.reward, discount=.9)
 
     def finish_one_job(self, finished_job):
         finished_job.finished = True
@@ -133,8 +140,7 @@ class ClusterEnv(py_environment.PyEnvironment):
             vm.cpu_now += finished_job.cpu
             vm.mem_now += finished_job.mem
             self.vms[vm.id] = vm
-        self._state = cluster.gen_cluster_state(self.job_idx, self.jobs,
-                                                self.vms)
+        self._state = cluster.gen_cluster_state(self.job_idx, self.jobs, self.vms)
         logging.debug("CLOCK: {}: Finished execution of job: {}".format(self.clock, finished_job.id))
         logging.debug("CLOCK: {}: Current Cluster State: {}".format(self.clock, self._state))
 
@@ -150,14 +156,18 @@ class ClusterEnv(py_environment.PyEnvironment):
             current_job.finish_time = self.clock + current_job.duration
             self.job_queue.put((current_job.finish_time, current_job))
 
-        if current_job.finish_time > vm.stop_use_clock:
-            vm.used_time += (current_job.finish_time - vm.stop_use_clock)
+        if current_job.start_time > vm.stop_use_clock:
+            vm.used_time += current_job.duration
             vm.stop_use_clock = current_job.finish_time
+        else:
+            if current_job.finish_time > vm.stop_use_clock:
+                vm.used_time += (current_job.finish_time - vm.stop_use_clock)
+                vm.stop_use_clock = current_job.finish_time
 
-        current_job.ex_placed += 1
-        current_job.ex_placement_list.append(vm)
         vm.cpu_now -= current_job.cpu
         vm.mem_now -= current_job.mem
+        current_job.ex_placed += 1
+        current_job.ex_placement_list.append(vm)
 
         self.vms[vm.id] = vm
         self.jobs[self.job_idx] = current_job
@@ -184,6 +194,7 @@ class ClusterEnv(py_environment.PyEnvironment):
 
         self._state = cluster.gen_cluster_state(self.job_idx, self.jobs,
                                                 self.vms)
+        logging.debug("CLOCK: {}: Current Cluster State: {}".format(self.clock, self._state))
         return True
 
     def check_episode_end(self):
@@ -195,8 +206,9 @@ class ClusterEnv(py_environment.PyEnvironment):
         cost = 0
         for i in range(len(self.vms)):
             cost += (self.vms[i].price * self.vms[i].used_time)
+            logging.debug("VM: {}, Price: {}, Time: {}".format(i, self.vms[i].price, self.vms[i].used_time))
             # print('vm: ', i, ' price: ', self.vms[i].price, ' time: ', self.vms[i].used_time)
-        logging.debug("\n***Episode VM Cost: {}\n\n".format(cost))
+        logging.debug("***Episode VM Cost: {}".format(cost))
         return cost
 
 # environment = ClusterEnv()

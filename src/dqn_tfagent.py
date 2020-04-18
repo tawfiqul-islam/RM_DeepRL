@@ -45,7 +45,7 @@ def compute_avg_return(environment, policy, num_episodes=10):
 
 
 # ***Hyperparameters***
-num_iterations = 20000  # @param {type:"integer"}
+num_iterations = 50000  # @param {type:"integer"}
 
 initial_collect_steps = 1000  # @param {type:"integer"}
 collect_steps_per_iteration = 1  # @param {type:"integer"}
@@ -100,8 +100,7 @@ agent.initialize()
 eval_policy = agent.policy
 collect_policy = agent.collect_policy
 
-random_policy = random_tf_policy.RandomTFPolicy(train_env.time_step_spec(),
-                                                train_env.action_spec())
+#random_policy = random_tf_policy.RandomTFPolicy(train_env.time_step_spec(), train_env.action_spec())
 
 # *** Replay Buffer ***
 replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
@@ -127,7 +126,7 @@ def collect_data(env, policy, buffer, steps):
         collect_step(env, policy, buffer)
 
 
-collect_data(train_env, random_policy, replay_buffer, steps=100)
+collect_data(train_env, collect_policy, replay_buffer, steps=10000)
 
 dataset = replay_buffer.as_dataset(
     num_parallel_calls=3,
