@@ -102,6 +102,7 @@ actor_net = actor_distribution_network.ActorDistributionNetwork(
     train_env.action_spec(),
     fc_layer_params=fc_layer_params)
 
+
 agent = reinforce_agent.ReinforceAgent(
     train_env.time_step_spec(),
     train_env.action_spec(),
@@ -164,6 +165,8 @@ for _ in range(num_iterations):
 
     # Use data from the buffer and update the agent's network.
     experience = replay_buffer.gather_all()
+    print('experience\n')
+    print(experience)
     train_loss = agent.train(experience)
     replay_buffer.clear()
 
@@ -178,6 +181,7 @@ for _ in range(num_iterations):
         returns.append(avg_return)
 
 # *** Visualizations ***
+
 iterations = range(0, num_iterations + 1, eval_interval)
 plt.plot(iterations, returns)
 plt.ylabel('Average Return')
