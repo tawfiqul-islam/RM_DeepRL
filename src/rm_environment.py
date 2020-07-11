@@ -2,13 +2,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import copy
 import logging
 import abc
 import tensorflow as tf
 import numpy as np
-from src import cluster
+import cluster
+import constants
 from queue import PriorityQueue
-from src import definitions as defs
+import definitions as defs
 from tf_agents.environments import py_environment
 from tf_agents.environments import tf_environment
 from tf_agents.environments import tf_py_environment
@@ -20,7 +22,7 @@ from tf_agents.trajectories import time_step as ts
 
 tf.compat.v1.enable_v2_behavior()
 
-logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w')
+logging.basicConfig(level=logging.DEBUG, filename='../output/app.log', filemode='w')
 
 
 # logging.debug('This will get logged to a file')
@@ -28,19 +30,19 @@ logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w')
 class ClusterEnv(py_environment.PyEnvironment):
 
     def __init__(self):
-        cluster.init_cluster()
+        # cluster.init_cluster()
         # logging.debug('length cluster_state_min ', len(cluster.cluster_state_min))
         self._action_spec = array_spec.BoundedArraySpec(
-            shape=(), dtype=np.int32, minimum=0, maximum=3, name='action')
+            shape=(), dtype=np.int32, minimum=0, maximum=9, name='action')
         self._observation_spec = array_spec.BoundedArraySpec(
             shape=(cluster.features,), dtype=np.int32, minimum=cluster.cluster_state_min,
             maximum=cluster.cluster_state_max,
             name='observation')
-        self._state = np.copy(cluster.cluster_state_init)
+        self._state = copy.deepcopy(cluster.cluster_state_init)
         self._episode_ended = False
         self.reward = 0
-        self.vms = np.copy(cluster.VMS)
-        self.jobs = np.copy(cluster.JOBS)
+        self.vms = copy.deepcopy(cluster.VMS)
+        self.jobs = copy.deepcopy(cluster.JOBS)
         self.clock = self.jobs[0].arrival_time
         self.job_idx = 0
         self.job_queue = PriorityQueue()
@@ -53,16 +55,18 @@ class ClusterEnv(py_environment.PyEnvironment):
         return self._observation_spec
 
     def _reset(self):
-        cluster.init_cluster()
-        self._state = np.copy(cluster.cluster_state_init)
+        # cluster.init_cluster()
+        self._state = copy.deepcopy(cluster.cluster_state_init)
         self._episode_ended = False
         self.reward = 0
-        self.vms = np.copy(cluster.VMS)
-        self.jobs = np.copy(cluster.JOBS)
+        self.vms = copy.deepcopy(cluster.VMS)
+        self.jobs = copy.deepcopy(cluster.JOBS)
         self.clock = self.jobs[0].arrival_time
         self.job_idx = 0
         self.job_queue = PriorityQueue()
         self.episode_success = False
+
+        # print(self.jobs[self.job_idx].ex_placed)
         return ts.restart(np.array(self._state, dtype=np.int32))
 
     def _step(self, action):
@@ -71,10 +75,11 @@ class ClusterEnv(py_environment.PyEnvironment):
         if self._episode_ended:
             # The last action ended the episode. Ignore the current action and start
             # a new episode.
+            # print(' i was here to reset and episode!!!!!!!!!!!!!!1')
             return self.reset()
 
-        if action > 3 or action < 0:
-            raise ValueError('`action` should be in 0 to 3.')
+        if action > 9 or action < 0:
+            raise ValueError('`action` should be in 0 to 9.')
 
         elif action == 0:
             logging.debug("CLOCK: {}: Action: {}".format(self.clock, action))
@@ -87,7 +92,8 @@ class ClusterEnv(py_environment.PyEnvironment):
             elif self.job_queue.empty():
                 self.reward = (-200)
                 self._episode_ended = True
-                logging.debug("CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended\n\n".format(self.clock))
+                logging.debug(
+                    "CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended\n\n".format(self.clock))
             # finishOneJob() <- finish one running job, update cluster states-> "self._state"
             else:
                 self.reward = -10
@@ -121,9 +127,12 @@ class ClusterEnv(py_environment.PyEnvironment):
                 #     cur_clock, next_finished_job = self.job_queue.get()
                 #     self.clock = cur_clock
                 #     self.finish_one_job(next_finished_job)
-
+                # Multi-Objective Reward Calculation
                 epi_cost = self.calculate_vm_cost()
-                self.reward = 1+100/(epi_cost/1440)
+                cost_reward = constants.beta * (epi_cost / cluster.total_episode_cost)
+                epi_avg_job_duration = self.calculate_avg_time()
+                time_reward = (1 - constants.beta) * (1 / (epi_avg_job_duration - cluster.min_avg_job_duration + 1))
+                self.reward = 1 + 100 / (cost_reward + time_reward)
                 logging.debug("CLOCK: {}: ****** Episode ended Successfully!!!!!!!! \n\n".format(self.clock))
 
             return ts.termination(np.array(self._state, dtype=np.int32), self.reward)
@@ -154,6 +163,7 @@ class ClusterEnv(py_environment.PyEnvironment):
             current_job.running = True
             current_job.start_time = self.clock
             current_job.finish_time = self.clock + current_job.duration
+            # TODO comment out this line to avoid invalid queue problem
             self.job_queue.put((current_job.finish_time, current_job))
 
         if current_job.start_time > vm.stop_use_clock:
@@ -169,12 +179,32 @@ class ClusterEnv(py_environment.PyEnvironment):
         current_job.ex_placed += 1
         current_job.ex_placement_list.append(vm)
 
-        self.vms[vm.id] = vm
-        self.jobs[self.job_idx] = current_job
+        self.vms[vm.id] = copy.deepcopy(vm)
+        self.jobs[self.job_idx] = copy.deepcopy(current_job)
 
         if current_job.ex_placed == current_job.ex:
             # self.reward = 10
             logging.debug("CLOCK: {}: Finished placement of job: {}".format(self.clock, current_job.id))
+            # Apply Job Duration Variance depending on placement type
+            # For CPU and Memory bound applications -> Consolidated placement is better
+            # For IO / Network bound applications -> Distributed placement is better
+            # If condition does not satisfy -> Apply a 20% job duration increase
+
+            if constants.pp_apply == 'true':
+                # IO / Network bound jobs
+                if current_job.type == 3:
+                    if len(set(current_job.ex_placement_list)) > 1:
+                        duration_increase = current_job.duration * float(constants.placement_penalty) / 100
+                        current_job.duration += duration_increase
+                        current_job.finish_time += duration_increase
+                # Compute or Memory bound jobs
+                else:
+                    if len(set(current_job.ex_placement_list)) != 1:
+                        duration_increase = current_job.duration * float(constants.placement_penalty) / 100
+                        current_job.duration += duration_increase
+                        current_job.finish_time += duration_increase
+            # TODO uncomment the next line and comment out the previous job_queue_put line
+            # self.job_queue.put((current_job.finish_time, current_job))
             if self.job_idx + 1 == len(self.jobs):
                 self._episode_ended = True
                 self.episode_success = True
@@ -210,6 +240,15 @@ class ClusterEnv(py_environment.PyEnvironment):
             # print('vm: ', i, ' price: ', self.vms[i].price, ' time: ', self.vms[i].used_time)
         logging.debug("***Episode VM Cost: {}".format(cost))
         return cost
+
+    def calculate_avg_time(self):
+        time = 0
+        for i in range(len(self.jobs)):
+            time += self.jobs[i].duration
+            logging.debug("Job: {}, Duration: {}".format(i, self.jobs[i].id, self.jobs[i].duration))
+        avg_time = time / len(self.jobs)
+        logging.debug("***Episode AVG Job Duration: {}".format(avg_time))
+        return avg_time
 
 # environment = ClusterEnv()
 # environment2 = ClusterEnv()

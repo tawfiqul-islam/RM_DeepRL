@@ -4,20 +4,13 @@ from tf_agents.agents.dqn import dqn_agent
 from tf_agents.networks import q_network
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import tf_py_environment
-from src.rm_environment import ClusterEnv
 from tf_agents.trajectories import trajectory
 from tf_agents.environments import wrappers
-from tf_agents.eval import metric_utils
-from tf_agents.metrics import tf_metrics
-from tf_agents.policies import random_tf_policy
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.utils import common
-from tf_agents.metrics import py_metrics
 from tf_agents.metrics import tf_metrics
-from tf_agents.drivers import py_driver
-from tf_agents.drivers import dynamic_episode_driver
 
-from src.gridworld import GridWorldEnv
+from other.gridworld import GridWorldEnv
 import matplotlib.pyplot as plt
 
 
@@ -28,20 +21,17 @@ def compute_avg_return(environment, policy, num_episodes=10):
         time_step = environment.reset()
         episode_return = 0.0
 
-        print('\n\n evaluation started \n')
         while not time_step.is_last():
             action_step = policy.action(time_step)
-            print('action: ', action_step.action)
             time_step = environment.step(action_step.action)
             episode_return += time_step.reward
-        total_return += episode_return
-        print('episode return: ', episode_return)
+            total_return += episode_return
 
     avg_return = total_return / num_episodes
     return avg_return.numpy()[0]
 
 
-num_iterations = 40000  # @param
+num_iterations = 10000  # @param
 
 initial_collect_steps = 1000  # @param
 collect_steps_per_iteration = 1  # @param
@@ -56,10 +46,8 @@ log_interval = 200  # @param
 num_eval_episodes = 2  # @param
 eval_interval = 1000  # @param
 
-train_py_env = wrappers.TimeLimit(ClusterEnv(), duration=100)
-eval_py_env = wrappers.TimeLimit(ClusterEnv(), duration=100)
-# train_py_env = wrappers.TimeLimit(GridWorldEnv(), duration=100)
-# eval_py_env = wrappers.TimeLimit(GridWorldEnv(), duration=100)
+train_py_env = wrappers.TimeLimit(GridWorldEnv(), duration=100)
+eval_py_env = wrappers.TimeLimit(GridWorldEnv(), duration=100)
 
 train_env = tf_py_environment.TFPyEnvironment(train_py_env)
 eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
@@ -111,8 +99,8 @@ def collect_step(environment, policy):
     replay_buffer.add_batch(traj)
 
 
-for _ in range(1000):
-    collect_step(train_env, tf_agent.collect_policy)
+# for _ in range(1000):
+#        collect_step(train_env, tf_agent.collect_policy)
 
 dataset = replay_buffer.as_dataset(
     num_parallel_calls=3,
