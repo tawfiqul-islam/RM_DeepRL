@@ -16,6 +16,8 @@ def main():
               .format(constants.iteration, constants.workload, constants.beta))
         REINFORCE_tfagent.train_reinforce(num_iterations=constants.iteration)
     elif constants.algo == 'dqn':
+        print("Running DQN Algorithm with iteration: {}, workload: {}, beta: {}"
+              .format(constants.iteration, constants.workload, constants.beta))
         DQN_tfagent.train_dqn(num_iterations=constants.iteration)
     else:
         print('Please specify valid algo option in config.ini file\n')

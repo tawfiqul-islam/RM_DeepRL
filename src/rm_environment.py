@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import copy
+import csv
 import logging
 import abc
 import tensorflow as tf
@@ -23,6 +24,11 @@ from tf_agents.trajectories import time_step as ts
 tf.compat.v1.enable_v2_behavior()
 
 logging.basicConfig(level=logging.DEBUG, filename='../output/app.log', filemode='w')
+
+episodes = 1
+file_result = open('../output/results.csv', 'w', newline='')
+episode_reward_writer = csv.writer(file_result, delimiter=',')
+episode_reward_writer.writerow(["Episode", "Reward", "Cost", "AVGtime"])
 
 
 # logging.debug('This will get logged to a file')
@@ -71,6 +77,7 @@ class ClusterEnv(py_environment.PyEnvironment):
 
     def _step(self, action):
 
+        global episodes
         # logging.debug("Current Cluster State: {}".format(self._state))
         if self._episode_ended:
             # The last action ended the episode. Ignore the current action and start
@@ -120,21 +127,26 @@ class ClusterEnv(py_environment.PyEnvironment):
             # self._state = generate new state after executing the current action
         if self._episode_ended:
 
+            epi_cost = cluster.max_episode_cost
+            epi_avg_job_duration = cluster.min_avg_job_duration + \
+                cluster.min_avg_job_duration * float(constants.placement_penalty)/100
+
             if self.episode_success:
-                # while True:
-                #     if self.job_queue.empty():
-                #         break
-                #     cur_clock, next_finished_job = self.job_queue.get()
-                #     self.clock = cur_clock
-                #     self.finish_one_job(next_finished_job)
                 # Multi-Objective Reward Calculation
                 epi_cost = self.calculate_vm_cost()
-                cost_reward = constants.beta * (epi_cost / cluster.total_episode_cost)
                 epi_avg_job_duration = self.calculate_avg_time()
-                time_reward = (1 - constants.beta) * (1 / (epi_avg_job_duration - cluster.min_avg_job_duration + 1))
-                self.reward = 1 + 100 / (cost_reward + time_reward)
+
+                cost_normalized = 1 - (epi_cost / cluster.max_episode_cost)
+                cost_reward = cost_normalized * constants.beta
+                time_normalized = cluster.min_avg_job_duration/epi_avg_job_duration
+                time_reward = time_normalized * (1 - constants.beta)
+
+                self.reward = constants.fixed_episodic_reward * (cost_reward + time_reward)
                 logging.debug("CLOCK: {}: ****** Episode ended Successfully!!!!!!!! \n\n".format(self.clock))
 
+            # Write results for an episode
+            episode_reward_writer.writerow([episodes, self.reward, epi_cost, epi_avg_job_duration])
+            episodes += 1
             return ts.termination(np.array(self._state, dtype=np.int32), self.reward)
 
         else:
@@ -164,7 +176,7 @@ class ClusterEnv(py_environment.PyEnvironment):
             current_job.start_time = self.clock
             current_job.finish_time = self.clock + current_job.duration
             # TODO comment out this line to avoid invalid queue problem
-            self.job_queue.put((current_job.finish_time, current_job))
+            # self.job_queue.put((current_job.finish_time, current_job))
 
         if current_job.start_time > vm.stop_use_clock:
             vm.used_time += current_job.duration
@@ -194,17 +206,21 @@ class ClusterEnv(py_environment.PyEnvironment):
                 # IO / Network bound jobs
                 if current_job.type == 3:
                     if len(set(current_job.ex_placement_list)) > 1:
+                        logging.debug("***** Bad placement for type 3 job. Machines used: {}".format(
+                            len(set(current_job.ex_placement_list))))
                         duration_increase = current_job.duration * float(constants.placement_penalty) / 100
                         current_job.duration += duration_increase
                         current_job.finish_time += duration_increase
                 # Compute or Memory bound jobs
                 else:
                     if len(set(current_job.ex_placement_list)) != 1:
+                        logging.debug("***** Bad placement for type 1 or 2 job. Machines used: {}".format(
+                            len(set(current_job.ex_placement_list))))
                         duration_increase = current_job.duration * float(constants.placement_penalty) / 100
                         current_job.duration += duration_increase
                         current_job.finish_time += duration_increase
             # TODO uncomment the next line and comment out the previous job_queue_put line
-            # self.job_queue.put((current_job.finish_time, current_job))
+            self.job_queue.put((current_job.finish_time, current_job))
             if self.job_idx + 1 == len(self.jobs):
                 self._episode_ended = True
                 self.episode_success = True
@@ -237,7 +253,6 @@ class ClusterEnv(py_environment.PyEnvironment):
         for i in range(len(self.vms)):
             cost += (self.vms[i].price * self.vms[i].used_time)
             logging.debug("VM: {}, Price: {}, Time: {}".format(i, self.vms[i].price, self.vms[i].used_time))
-            # print('vm: ', i, ' price: ', self.vms[i].price, ' time: ', self.vms[i].used_time)
         logging.debug("***Episode VM Cost: {}".format(cost))
         return cost
 
@@ -245,8 +260,8 @@ class ClusterEnv(py_environment.PyEnvironment):
         time = 0
         for i in range(len(self.jobs)):
             time += self.jobs[i].duration
-            logging.debug("Job: {}, Duration: {}".format(i, self.jobs[i].id, self.jobs[i].duration))
-        avg_time = time / len(self.jobs)
+            logging.debug("Job: {}, Duration: {}".format(self.jobs[i].id, self.jobs[i].duration))
+        avg_time = float(time) / len(self.jobs)
         logging.debug("***Episode AVG Job Duration: {}".format(avg_time))
         return avg_time
 

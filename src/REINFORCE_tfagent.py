@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import csv
+
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
@@ -8,6 +10,8 @@ from tf_agents.agents.dqn import dqn_agent
 from tf_agents.agents.reinforce import reinforce_agent
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import tf_py_environment
+
+import utilities
 from rm_environment import ClusterEnv
 from tf_agents.eval import metric_utils
 from tf_agents.metrics import tf_metrics
@@ -16,7 +20,7 @@ from tf_agents.policies import random_tf_policy
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.trajectories import trajectory
 from tf_agents.utils import common
-
+import main
 tf.compat.v1.enable_v2_behavior()
 
 
@@ -49,14 +53,14 @@ def compute_avg_return(environment, policy, num_episodes=10):
         time_step = environment.reset()
         episode_return = 0.0
 
-        print('\n\n evaluation started \n')
+        # print('\n\n evaluation started \n')
         while not time_step.is_last():
             action_step = policy.action(time_step)
-            print('action: ', action_step.action)
+            # print('action: ', action_step.action)
             time_step = environment.step(action_step.action)
             episode_return += time_step.reward
         total_return += episode_return
-        print('episode return: ', episode_return)
+        # print('episode return: ', episode_return)
 
     avg_return = total_return / num_episodes
     return avg_return.numpy()[0]
@@ -70,14 +74,17 @@ def train_reinforce(
         replay_buffer_max_length=10000,  # @param {type:"integer"}
         fc_layer_params=(100,),
         learning_rate=1e-3,  # @param {type:"number"}
-        log_interval=200,  # @param {type:"integer"}
+        log_interval=50,  # @param {type:"integer"}
         num_eval_episodes=10,  # @param {type:"integer"}
-        eval_interval=1000  # @param {type:"integer"}
+        eval_interval=100  # @param {type:"integer"}
 ):
+    file = open('../output/AVG_returns.csv', 'w', newline='')
+    avg_return_writer = csv.writer(file, delimiter=',')
+    avg_return_writer.writerow(["Iteration", "AVG_Return"])
     # *** Environment***
     # 2 environments, 1 for training and 1 for evaluation
     train_py_env = ClusterEnv()
-    eval_py_env = ClusterEnv()
+    eval_py_env = train_py_env
 
     # converting pyenv to tfenv
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
@@ -146,6 +153,7 @@ def train_reinforce(
         if step % eval_interval == 0:
             avg_return = compute_avg_return(eval_env, agent.policy, num_eval_episodes)
             print('step = {0}: Average Return = {1}'.format(step, avg_return))
+            avg_return_writer.writerow([step, avg_return])
             returns.append(avg_return)
 
     # *** Visualizations ***

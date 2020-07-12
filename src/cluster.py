@@ -61,7 +61,7 @@ cluster_state_min = []
 cluster_state_max = []
 #job_queue = PriorityQueue()
 
-total_episode_cost = 0
+max_episode_cost = 0
 min_avg_job_duration = 0
 
 
@@ -150,14 +150,14 @@ def init_cluster():
     vms_total_price = 0
     jobs_total_time = 0
 
-    global total_episode_cost
+    global max_episode_cost
     global min_avg_job_duration
     for i in range(len(VMS)):
         vms_total_price += VMS[i].price
     for i in range(len(JOBS)):
         jobs_total_time += JOBS[i].duration
 
-    total_episode_cost = vms_total_price*jobs_total_time
+    max_episode_cost = vms_total_price * jobs_total_time
     min_avg_job_duration = float(jobs_total_time)/len(JOBS)
 
     # print('Number of VMS {0}'.format(len(VMS)))
