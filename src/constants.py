@@ -1,6 +1,7 @@
 # default values
+root = '/home/tawfiq/PycharmProjects/RM_DeepRL'
 algo = 'reinforce'
-workload = 'jobs_Short'
+workload = 'jobs.csv'
 beta = 1.0
 iteration = 1000
 fixed_episodic_reward = 100

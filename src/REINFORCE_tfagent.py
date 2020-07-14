@@ -5,7 +5,7 @@ import csv
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
-
+import constants
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.agents.reinforce import reinforce_agent
 from tf_agents.drivers import dynamic_step_driver
@@ -78,7 +78,7 @@ def train_reinforce(
         num_eval_episodes=10,  # @param {type:"integer"}
         eval_interval=1000  # @param {type:"integer"}
 ):
-    file = open('../output/AVG_returns.csv', 'w', newline='')
+    file = open(constants.root+'/output/avg_returns_'+constants.algo+'_beta_'+str(constants.beta)+'.csv', 'w', newline='')
     avg_return_writer = csv.writer(file, delimiter=',')
     avg_return_writer.writerow(["Iteration", "AVG_Return"])
     # *** Environment***
@@ -158,9 +158,9 @@ def train_reinforce(
 
     # *** Visualizations ***
 
-    iterations = range(0, num_iterations + 1, eval_interval)
-    plt.plot(iterations, returns)
-    plt.ylabel('Average Return')
-    plt.xlabel('Iterations')
-    # plt.ylim(top=250)
-    plt.show()
+    # iterations = range(0, num_iterations + 1, eval_interval)
+    # plt.plot(iterations, returns)
+    # plt.ylabel('Average Return')
+    # plt.xlabel('Iterations')
+    # # plt.ylim(top=250)
+    # plt.show()

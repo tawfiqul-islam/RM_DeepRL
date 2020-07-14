@@ -23,10 +23,10 @@ from tf_agents.trajectories import time_step as ts
 
 tf.compat.v1.enable_v2_behavior()
 
-logging.basicConfig(level=logging.DEBUG, filename='../output/app.log', filemode='w')
+logging.basicConfig(level=logging.DEBUG, filename=constants.root+'/output/'+constants.algo+'.log', filemode='w')
 
 episodes = 1
-file_result = open('../output/results.csv', 'a+', newline='')
+file_result = open(constants.root+'/output/results_'+constants.algo+'.csv', 'a+', newline='')
 episode_reward_writer = csv.writer(file_result, delimiter=',')
 episode_reward_writer.writerow(["Episode", "Reward", "Cost", "AVGtime"])
 

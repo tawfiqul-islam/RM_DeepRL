@@ -2,6 +2,7 @@ import numpy as np
 import definitions as defs
 import workload
 import copy
+
 # cluster resource details
 
 
@@ -47,10 +48,10 @@ j3_ex = 2
 j3_time = 80
 
 job_features = 4
-features = (vm1_total+vm2_total+vm3_total)*2+job_features
-#cluster_state_min = [0, 0, 0, 0, 0, 0, 1, 1, j_cpu_min, j_mem_min, j_ex_min]
-#cluster_state_max = [vm0_cpu, vm0_mem, vm1_cpu, vm1_mem, vm2_cpu, vm2_mem, j_total, j_types, j_cpu_max, j_mem_max, j_ex_max]
-#cluster_state_init = [vm0_cpu, vm0_mem, vm1_cpu, vm1_mem, vm2_cpu, vm2_mem, 1, 1, j0_cpu, j0_mem, j0_ex]
+features = (vm1_total + vm2_total + vm3_total) * 2 + job_features
+# cluster_state_min = [0, 0, 0, 0, 0, 0, 1, 1, j_cpu_min, j_mem_min, j_ex_min]
+# cluster_state_max = [vm0_cpu, vm0_mem, vm1_cpu, vm1_mem, vm2_cpu, vm2_mem, j_total, j_types, j_cpu_max, j_mem_max, j_ex_max]
+# cluster_state_init = [vm0_cpu, vm0_mem, vm1_cpu, vm1_mem, vm2_cpu, vm2_mem, 1, 1, j0_cpu, j0_mem, j0_ex]
 
 JOBS = []
 VMS = []
@@ -59,7 +60,7 @@ VMS = []
 cluster_state_init = []
 cluster_state_min = []
 cluster_state_max = []
-#job_queue = PriorityQueue()
+# job_queue = PriorityQueue()
 
 max_episode_cost = 0
 min_avg_job_duration = 0
@@ -72,11 +73,11 @@ def gen_cluster_state(job_idx, jobs, vms):
         cluster_state.append(vms[i].cpu_now)
         cluster_state.append(vms[i].mem_now)
         i += 1
-    #cluster_state.append(jobs[job_idx].id)
+    # cluster_state.append(jobs[job_idx].id)
     cluster_state.append(jobs[job_idx].type)
     cluster_state.append(jobs[job_idx].cpu)
     cluster_state.append(jobs[job_idx].mem)
-    cluster_state.append(jobs[job_idx].ex-jobs[job_idx].ex_placed)
+    cluster_state.append(jobs[job_idx].ex - jobs[job_idx].ex_placed)
     return cluster_state
 
 
@@ -87,12 +88,13 @@ def gen_cluster_state_min():
         cluster_state.append(0)
         cluster_state.append(0)
         i += 1
-    #cluster_state.append(0)
+    # cluster_state.append(0)
     cluster_state.append(1)
     cluster_state.append(j_cpu_min)
     cluster_state.append(j_mem_min)
     cluster_state.append(j_ex_min)
     return cluster_state
+
 
 def gen_cluster_state_max():
     cluster_state = []
@@ -101,7 +103,7 @@ def gen_cluster_state_max():
         cluster_state.append(VMS[i].cpu)
         cluster_state.append(VMS[i].mem)
         i += 1
-    #cluster_state.append(j_total-1)
+    # cluster_state.append(j_total-1)
     cluster_state.append(j_types)
     cluster_state.append(j_cpu_max)
     cluster_state.append(j_mem_max)
@@ -121,8 +123,9 @@ def fetch_jobs_workload():
     global JOBS
     JOBS = copy.deepcopy(workload.JOBS_WORKLOAD)
 
+
 def init_jobs():
-    #gen_jobs_simple()
+    # gen_jobs_simple()
     fetch_jobs_workload()
 
 
@@ -158,7 +161,7 @@ def init_cluster():
         jobs_total_time += JOBS[i].duration
 
     max_episode_cost = vms_total_price * jobs_total_time
-    min_avg_job_duration = float(jobs_total_time)/len(JOBS)
+    min_avg_job_duration = float(jobs_total_time) / len(JOBS)
 
     # print('Number of VMS {0}'.format(len(VMS)))
     # print('Number of Jobs {0}'.format(len(JOBS)))

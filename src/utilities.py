@@ -5,11 +5,13 @@ def load_config():
     import constants
     config = configparser.ConfigParser()
     # Load the configuration file
-    config.read('../settings/config.ini')
+    config.read(constants.root+'/settings/config.ini')
     # Load configs
     for section in config.sections():
         for options in config.options(section):
-            if options == 'algo':
+            if options == 'root':
+                constants.root = config.get(section, options)
+            elif options == 'algo':
                 constants.algo = config.get(section, options)
             elif options == 'workload':
                 constants.workload = config.get(section, options)

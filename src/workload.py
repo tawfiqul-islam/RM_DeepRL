@@ -5,7 +5,7 @@ JOBS_WORKLOAD = []
 
 
 def read_workload():
-    with open('../input/'+constants.workload) as csvfile:
+    with open(constants.root+'/input/'+constants.workload) as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
         global JOBS_WORKLOAD
         JOBS_WORKLOAD = []

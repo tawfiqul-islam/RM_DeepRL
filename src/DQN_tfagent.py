@@ -8,7 +8,9 @@ from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import suite_gym
 from tf_agents.environments import tf_py_environment
-from src.rm_environment import ClusterEnv
+
+import constants
+from rm_environment import ClusterEnv
 from tf_agents.eval import metric_utils
 from tf_agents.metrics import tf_metrics
 from tf_agents.networks import q_network
@@ -16,7 +18,7 @@ from tf_agents.policies import random_tf_policy
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.trajectories import trajectory
 from tf_agents.utils import common
-
+import csv
 tf.compat.v1.enable_v2_behavior()
 
 
@@ -28,14 +30,14 @@ def compute_avg_return(environment, policy, num_episodes=10):
         time_step = environment.reset()
         episode_return = 0.0
 
-        print('\n\n evaluation started \n')
+        # print('\n\n evaluation started \n')
         while not time_step.is_last():
             action_step = policy.action(time_step)
             print('action: ', action_step.action)
             time_step = environment.step(action_step.action)
             episode_return += time_step.reward
         total_return += episode_return
-        print('episode return: ', episode_return)
+        # print('episode return: ', episode_return)
 
     avg_return = total_return / num_episodes
     return avg_return.numpy()[0]
@@ -70,6 +72,11 @@ def train_dqn(
         num_eval_episodes=10,  # @param {type:"integer"}
         eval_interval=1000  # @param {type:"integer"}
 ):
+    file = open(constants.root + '/output/avg_returns_' + constants.algo + '_beta_' + str(constants.beta) + '.csv', 'w',
+                newline='')
+    avg_return_writer = csv.writer(file, delimiter=',')
+    avg_return_writer.writerow(["Iteration", "AVG_Return"])
+
     # *** Environment***
     train_py_env = ClusterEnv()
     eval_py_env = train_py_env
@@ -147,12 +154,13 @@ def train_dqn(
         if step % eval_interval == 0:
             avg_return = compute_avg_return(eval_env, agent.policy, num_eval_episodes)
             print('step = {0}: Average Return = {1}'.format(step, avg_return))
+            avg_return_writer.writerow([step, avg_return])
             returns.append(avg_return)
 
     # *** Visualizations ***
-    iterations = range(0, num_iterations + 1, eval_interval)
-    plt.plot(iterations, returns)
-    plt.ylabel('Average Return')
-    plt.xlabel('Iterations')
-    # plt.ylim(top=250)
-    plt.show()
+    # iterations = range(0, num_iterations + 1, eval_interval)
+    # plt.plot(iterations, returns)
+    # plt.ylabel('Average Return')
+    # plt.xlabel('Iterations')
+    # # plt.ylim(top=250)
+    # plt.show()
