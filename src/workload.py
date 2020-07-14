@@ -1,11 +1,11 @@
 import csv
 import definitions as defs
-
+import constants
 JOBS_WORKLOAD = []
 
 
 def read_workload():
-    with open('../input/jobs_test.csv') as csvfile:
+    with open('../input/'+constants.workload) as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
         global JOBS_WORKLOAD
         JOBS_WORKLOAD = []

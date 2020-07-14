@@ -74,9 +74,9 @@ def train_reinforce(
         replay_buffer_max_length=10000,  # @param {type:"integer"}
         fc_layer_params=(100,),
         learning_rate=1e-3,  # @param {type:"number"}
-        log_interval=50,  # @param {type:"integer"}
+        log_interval=200,  # @param {type:"integer"}
         num_eval_episodes=10,  # @param {type:"integer"}
-        eval_interval=100  # @param {type:"integer"}
+        eval_interval=1000  # @param {type:"integer"}
 ):
     file = open('../output/AVG_returns.csv', 'w', newline='')
     avg_return_writer = csv.writer(file, delimiter=',')
@@ -84,7 +84,7 @@ def train_reinforce(
     # *** Environment***
     # 2 environments, 1 for training and 1 for evaluation
     train_py_env = ClusterEnv()
-    eval_py_env = train_py_env
+    eval_py_env = ClusterEnv()
 
     # converting pyenv to tfenv
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)

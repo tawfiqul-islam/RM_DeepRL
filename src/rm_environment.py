@@ -26,7 +26,7 @@ tf.compat.v1.enable_v2_behavior()
 logging.basicConfig(level=logging.DEBUG, filename='../output/app.log', filemode='w')
 
 episodes = 1
-file_result = open('../output/results.csv', 'w', newline='')
+file_result = open('../output/results.csv', 'a+', newline='')
 episode_reward_writer = csv.writer(file_result, delimiter=',')
 episode_reward_writer.writerow(["Episode", "Reward", "Cost", "AVGtime"])
 
@@ -92,7 +92,7 @@ class ClusterEnv(py_environment.PyEnvironment):
             logging.debug("CLOCK: {}: Action: {}".format(self.clock, action))
             # penalty for partial placement
             if self.jobs[self.job_idx].ex_placed > 0:
-                self.reward = (-200)
+                self.reward = (-50)
                 self._episode_ended = True
                 logging.debug("CLOCK: {}: Partial Executor Placement for a Job. Episode Ended\n\n".format(self.clock))
             # if no running jobs but jobs waiting to be scheduled -> huge Neg Reward and episode ends
@@ -103,7 +103,7 @@ class ClusterEnv(py_environment.PyEnvironment):
                     "CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended\n\n".format(self.clock))
             # finishOneJob() <- finish one running job, update cluster states-> "self._state"
             else:
-                self.reward = -10
+                self.reward = 1
                 _, y = self.job_queue.get()
                 self.clock = y.finish_time
                 self.finish_one_job(y)
@@ -114,8 +114,16 @@ class ClusterEnv(py_environment.PyEnvironment):
             # check for episode end  -> update self._episode_ended
             if self.execute_placement(action):
                 # print('placement successful, clock: ', self.clock)
-                self.reward = 1
-                self.check_episode_end()
+                if self.check_enough_cluster_resource():
+                    self.reward = 1
+                else:
+                    self.reward = (-200)
+                    self._episode_ended = True
+                    logging.debug(
+                        "CLOCK: {}: Optimistic Executor Placement will lead to cluster resource shortage. Episode "
+                        "Ended\n\n".format(self.clock))
+                # TODO Episode end check needed or not?
+                # self.check_episode_end()
             # if invalid placement -> Huge Neg Reward and episode ends
             else:
                 self.reward = (-200)
@@ -129,7 +137,7 @@ class ClusterEnv(py_environment.PyEnvironment):
 
             epi_cost = cluster.max_episode_cost
             epi_avg_job_duration = cluster.min_avg_job_duration + \
-                cluster.min_avg_job_duration * float(constants.placement_penalty)/100
+                                   cluster.min_avg_job_duration * float(constants.placement_penalty) / 100
 
             if self.episode_success:
                 # Multi-Objective Reward Calculation
@@ -138,11 +146,15 @@ class ClusterEnv(py_environment.PyEnvironment):
 
                 cost_normalized = 1 - (epi_cost / cluster.max_episode_cost)
                 cost_reward = cost_normalized * constants.beta
-                time_normalized = cluster.min_avg_job_duration/epi_avg_job_duration
+                time_normalized = cluster.min_avg_job_duration / epi_avg_job_duration
                 time_reward = time_normalized * (1 - constants.beta)
 
                 self.reward = constants.fixed_episodic_reward * (cost_reward + time_reward)
                 logging.debug("CLOCK: {}: ****** Episode ended Successfully!!!!!!!! \n\n".format(self.clock))
+                logging.debug("cost normalized: {}, cost reward: {}, time normalized: {}, "
+                              "time reward: {}, final reward: {}\n\n".format(cost_normalized, cost_reward,
+                                                                             time_normalized, time_reward,
+                                                                             self.reward))
 
             # Write results for an episode
             episode_reward_writer.writerow([episodes, self.reward, epi_cost, epi_avg_job_duration])
@@ -157,42 +169,31 @@ class ClusterEnv(py_environment.PyEnvironment):
         finished_job.finished = True
         finished_job.running = False
         for i in range(len(finished_job.ex_placement_list)):
-            vm = finished_job.ex_placement_list[i]
+            vm = self.vms[finished_job.ex_placement_list[i]]
             vm.cpu_now += finished_job.cpu
             vm.mem_now += finished_job.mem
-            self.vms[vm.id] = vm
+            # TODO copy/reference needed or not?
+            # self.vms[vm.id] = vm
         self._state = cluster.gen_cluster_state(self.job_idx, self.jobs, self.vms)
         logging.debug("CLOCK: {}: Finished execution of job: {}".format(self.clock, finished_job.id))
         logging.debug("CLOCK: {}: Current Cluster State: {}".format(self.clock, self._state))
 
     def execute_placement(self, action):
+
         current_job = self.jobs[self.job_idx]
-        vm = self.vms[action - 1]
-        if current_job.cpu > vm.cpu_now or current_job.mem > vm.mem_now:
+        vm_idx = action - 1
+
+        if current_job.cpu > self.vms[vm_idx].cpu_now or current_job.mem > self.vms[vm_idx].mem_now:
             return False
 
-        if not current_job.running:
-            current_job.running = True
-            current_job.start_time = self.clock
-            current_job.finish_time = self.clock + current_job.duration
-            # TODO comment out this line to avoid invalid queue problem
-            # self.job_queue.put((current_job.finish_time, current_job))
-
-        if current_job.start_time > vm.stop_use_clock:
-            vm.used_time += current_job.duration
-            vm.stop_use_clock = current_job.finish_time
-        else:
-            if current_job.finish_time > vm.stop_use_clock:
-                vm.used_time += (current_job.finish_time - vm.stop_use_clock)
-                vm.stop_use_clock = current_job.finish_time
-
-        vm.cpu_now -= current_job.cpu
-        vm.mem_now -= current_job.mem
+        self.vms[vm_idx].cpu_now -= current_job.cpu
+        self.vms[vm_idx].mem_now -= current_job.mem
         current_job.ex_placed += 1
-        current_job.ex_placement_list.append(vm)
-
-        self.vms[vm.id] = copy.deepcopy(vm)
-        self.jobs[self.job_idx] = copy.deepcopy(current_job)
+        current_job.ex_placement_list.append(vm_idx)
+        # print('current job variable executor: {}\n'.format(current_job.ex_placed))
+        # print('self job variable executor: {}\n'.format(self.jobs[self.job_idx].ex_placed))
+        # TODO deep copy needed or not?
+        # self.jobs[self.job_idx] = copy.deepcopy(current_job)
 
         if current_job.ex_placed == current_job.ex:
             # self.reward = 10
@@ -205,21 +206,42 @@ class ClusterEnv(py_environment.PyEnvironment):
             if constants.pp_apply == 'true':
                 # IO / Network bound jobs
                 if current_job.type == 3:
-                    if len(set(current_job.ex_placement_list)) > 1:
-                        logging.debug("***** Bad placement for type 3 job. Machines used: {}".format(
-                            len(set(current_job.ex_placement_list))))
+                    if len(set(current_job.ex_placement_list)) != 1:
+                        logging.debug("***** Bad placement for type 3 job. Executors: {}, Machines used: {}".format(
+                            current_job.ex_placed, len(set(current_job.ex_placement_list))))
                         duration_increase = current_job.duration * float(constants.placement_penalty) / 100
                         current_job.duration += duration_increase
-                        current_job.finish_time += duration_increase
+                    else:
+                        logging.debug("***** Good placement for type 3 job. Executors: {}, Machines used: {}".format(
+                            current_job.ex_placed, len(set(current_job.ex_placement_list))))
                 # Compute or Memory bound jobs
                 else:
-                    if len(set(current_job.ex_placement_list)) != 1:
-                        logging.debug("***** Bad placement for type 1 or 2 job. Machines used: {}".format(
-                            len(set(current_job.ex_placement_list))))
+                    if len(set(current_job.ex_placement_list)) < current_job.ex_placed:
+                        logging.debug("***** Bad placement for type 1 or 2 job. Executors: {}, Machines used: {}".format
+                                      (current_job.ex_placed, len(set(current_job.ex_placement_list))))
                         duration_increase = current_job.duration * float(constants.placement_penalty) / 100
                         current_job.duration += duration_increase
-                        current_job.finish_time += duration_increase
-            # TODO uncomment the next line and comment out the previous job_queue_put line
+                    else:
+                        logging.debug(
+                            "***** Good placement for type 1 or 2 job. Executors: {}, Machines used: {}".format(
+                                current_job.ex_placed, len(set(current_job.ex_placement_list))))
+            # Update current job start and finish times
+            current_job.running = True
+            current_job.start_time = self.clock
+            current_job.finish_time = self.clock + current_job.duration
+            # Update VM usage data for each VM used for placing executors of the current job
+            for i in range(len(current_job.ex_placement_list)):
+                if current_job.start_time > self.vms[current_job.ex_placement_list[i]].stop_use_clock:
+                    self.vms[current_job.ex_placement_list[i]].used_time += current_job.duration
+                    self.vms[current_job.ex_placement_list[i]].stop_use_clock = current_job.finish_time
+                else:
+                    if current_job.finish_time > self.vms[current_job.ex_placement_list[i]].stop_use_clock:
+                        self.vms[current_job.ex_placement_list[i]].used_time += (
+                                current_job.finish_time - self.vms[current_job.ex_placement_list[i]].stop_use_clock)
+                        self.vms[current_job.ex_placement_list[i]].stop_use_clock = current_job.finish_time
+            # TODO deep copy needed or not?
+            # self.jobs[self.job_idx] = copy.deepcopy(current_job)
+
             self.job_queue.put((current_job.finish_time, current_job))
             if self.job_idx + 1 == len(self.jobs):
                 self._episode_ended = True
@@ -242,6 +264,15 @@ class ClusterEnv(py_environment.PyEnvironment):
                                                 self.vms)
         logging.debug("CLOCK: {}: Current Cluster State: {}".format(self.clock, self._state))
         return True
+
+    def check_enough_cluster_resource(self):
+        current_job = self.jobs[self.job_idx]
+        possible_placement = 0
+        remaining_placement = current_job.ex - current_job.ex_placed
+        for i in range(len(self.vms)):
+            possible_placement += min(self.vms[i].cpu_now / current_job.cpu, self.vms[i].mem_now / current_job.mem)
+
+        return possible_placement >= remaining_placement
 
     def check_episode_end(self):
         current_job = self.jobs[self.job_idx]
