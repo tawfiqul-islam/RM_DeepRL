@@ -6,7 +6,6 @@ import tensorflow as tf
 
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
-from tf_agents.environments import suite_gym
 from tf_agents.environments import tf_py_environment
 
 import constants
