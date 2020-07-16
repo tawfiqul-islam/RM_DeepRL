@@ -32,7 +32,7 @@ def compute_avg_return(environment, policy, num_episodes=10):
         # print('\n\n evaluation started \n')
         while not time_step.is_last():
             action_step = policy.action(time_step)
-            print('action: ', action_step.action)
+            # print('action: ', action_step.action)
             time_step = environment.step(action_step.action)
             episode_return += time_step.reward
         total_return += episode_return
@@ -62,7 +62,7 @@ def train_dqn(
         # ***Hyperparameters***
         num_iterations=20000,  # @param {type:"integer"}
         initial_collect_steps=1000,  # @param {type:"integer"}
-        collect_steps_per_iteration=1,  # @param {type:"integer"}
+        collect_steps_per_iteration=10,  # @param {type:"integer"}
         replay_buffer_max_length=100000,  # @param {type:"integer"}
         fc_layer_params=(200,),
         batch_size=64,  # @param {type:"integer"}
@@ -78,7 +78,7 @@ def train_dqn(
 
     # *** Environment***
     train_py_env = ClusterEnv()
-    eval_py_env = train_py_env
+    eval_py_env = ClusterEnv()
 
     # converting pyenv to tfenv
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
@@ -106,7 +106,7 @@ def train_dqn(
 
     # *** Policies ***
 
-    # random_policy = random_tf_policy.RandomTFPolicy(train_env.time_step_spec(), train_env.action_spec())
+    random_policy = random_tf_policy.RandomTFPolicy(train_env.time_step_spec(), train_env.action_spec())
 
     # *** Replay Buffer ***
     replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(

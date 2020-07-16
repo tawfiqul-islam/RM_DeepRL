@@ -23,12 +23,10 @@ from tf_agents.trajectories import time_step as ts
 
 tf.compat.v1.enable_v2_behavior()
 
-logging.basicConfig(level=logging.DEBUG, filename=constants.root+'/output/'+constants.algo+'.log', filemode='w')
+logging.basicConfig(level=logging.DEBUG, filename=constants.root + '/output/' + constants.algo + '.log', filemode='w')
 
 episodes = 1
-file_result = open(constants.root+'/output/results_'+constants.algo+'.csv', 'a+', newline='')
-episode_reward_writer = csv.writer(file_result, delimiter=',')
-episode_reward_writer.writerow(["Episode", "Reward", "Cost", "AVGtime"])
+action_0_counter = 0
 
 
 # logging.debug('This will get logged to a file')
@@ -36,7 +34,9 @@ episode_reward_writer.writerow(["Episode", "Reward", "Cost", "AVGtime"])
 class ClusterEnv(py_environment.PyEnvironment):
 
     def __init__(self):
-        # cluster.init_cluster()
+        self.file_result = open(constants.root + '/output/results_' + constants.algo + '.csv', 'a+', newline='')
+        self.episode_reward_writer = csv.writer(self.file_result, delimiter=',')
+        self.episode_reward_writer.writerow(["Episode", "Reward", "Cost", "AVGtime"])
         # logging.debug('length cluster_state_min ', len(cluster.cluster_state_min))
         self._action_spec = array_spec.BoundedArraySpec(
             shape=(), dtype=np.int32, minimum=0, maximum=9, name='action')
@@ -89,12 +89,20 @@ class ClusterEnv(py_environment.PyEnvironment):
             raise ValueError('`action` should be in 0 to 9.')
 
         elif action == 0:
+            global action_0_counter
+            action_0_counter += 1
             logging.debug("CLOCK: {}: Action: {}".format(self.clock, action))
             # penalty for partial placement
-            if self.jobs[self.job_idx].ex_placed > 0:
-                self.reward = (-50)
+            if action_0_counter > 10:
+                self.reward = (-200)
                 self._episode_ended = True
-                logging.debug("CLOCK: {}: Partial Executor Placement for a Job. Episode Ended\n\n".format(self.clock))
+                logging.debug("CLOCK: {}: Continuous Action 0 chosen for a Job. Episode Ended\n\n".format(self.clock))
+            elif self.jobs[self.job_idx].ex_placed > 0:
+                self.reward = (-1)
+                self._state = cluster.gen_cluster_state(self.job_idx, self.jobs,
+                                                        self.vms)
+                # self._episode_ended = True
+                logging.debug("CLOCK: {}: Partial Executor Placement for a Job.\n\n".format(self.clock))
             # if no running jobs but jobs waiting to be scheduled -> huge Neg Reward and episode ends
             elif self.job_queue.empty():
                 self.reward = (-200)
@@ -103,12 +111,13 @@ class ClusterEnv(py_environment.PyEnvironment):
                     "CLOCK: {}: No Executor Placement When No Job was Running. Episode Ended\n\n".format(self.clock))
             # finishOneJob() <- finish one running job, update cluster states-> "self._state"
             else:
-                self.reward = 1
+                self.reward = (-1)
                 _, y = self.job_queue.get()
                 self.clock = y.finish_time
                 self.finish_one_job(y)
             # TODO add check for large job which does not fit in the cluster
         else:
+            action_0_counter = 0
             logging.debug("CLOCK: {}: Action: {}".format(self.clock, action))
             # if valid placement, place 1 ex in the VM chosen, update cluster states -> "self._state";
             # check for episode end  -> update self._episode_ended
@@ -120,8 +129,7 @@ class ClusterEnv(py_environment.PyEnvironment):
                     self.reward = (-200)
                     self._episode_ended = True
                     logging.debug(
-                        "CLOCK: {}: Optimistic Executor Placement will lead to cluster resource shortage. Episode "
-                        "Ended\n\n".format(self.clock))
+                        "CLOCK: {}: Optimistic Executor Placement leading to cluster resource shortage.\n\n".format(self.clock))
                 # TODO Episode end check needed or not?
                 # self.check_episode_end()
             # if invalid placement -> Huge Neg Reward and episode ends
@@ -157,7 +165,7 @@ class ClusterEnv(py_environment.PyEnvironment):
                                                                              self.reward))
 
             # Write results for an episode
-            episode_reward_writer.writerow([episodes, self.reward, epi_cost, epi_avg_job_duration])
+            self.episode_reward_writer.writerow([episodes, self.reward, epi_cost, epi_avg_job_duration])
             episodes += 1
             return ts.termination(np.array(self._state, dtype=np.int32), self.reward)
 
