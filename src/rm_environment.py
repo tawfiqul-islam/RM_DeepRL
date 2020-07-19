@@ -49,6 +49,7 @@ class ClusterEnv(py_environment.PyEnvironment):
         self.job_idx = 0
         self.job_queue = PriorityQueue()
         self.episode_success = False
+        self.good_placement = 0
 
     def action_spec(self):
         return self._action_spec
@@ -138,11 +139,12 @@ class ClusterEnv(py_environment.PyEnvironment):
             if self.episode_success:
                 # Multi-Objective Reward Calculation
                 epi_cost = self.calculate_vm_cost()
-                epi_avg_job_duration = self.calculate_avg_time()
-
                 cost_normalized = 1 - (epi_cost / cluster.max_episode_cost)
                 cost_reward = cost_normalized * constants.beta
-                time_normalized = cluster.min_avg_job_duration / epi_avg_job_duration
+
+                epi_avg_job_duration = self.calculate_avg_time()
+                max_avg_job_duration = cluster.min_avg_job_duration + cluster.min_avg_job_duration * (constants.placement_penalty/100)
+                time_normalized = 1 - (epi_avg_job_duration-cluster.min_avg_job_duration) / (max_avg_job_duration-cluster.min_avg_job_duration)
                 time_reward = time_normalized * (1 - constants.beta)
 
                 self.reward = constants.fixed_episodic_reward * (cost_reward + time_reward)
@@ -281,7 +283,7 @@ class ClusterEnv(py_environment.PyEnvironment):
         cost = 0
         for i in range(len(self.vms)):
             cost += (self.vms[i].price * self.vms[i].used_time)
-            logging.debug("VM: {}, Price: {}, Time: {}".format(i, self.vms[i].price, self.vms[i].used_time))
+            logging.info("VM: {}, Price: {}, Time: {}".format(i, self.vms[i].price, self.vms[i].used_time))
         logging.info("***Episode VM Cost: {}".format(cost))
         return cost
 
