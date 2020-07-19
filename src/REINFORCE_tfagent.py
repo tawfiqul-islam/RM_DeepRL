@@ -83,7 +83,7 @@ def train_reinforce(
     # *** Environment***
     # 2 environments, 1 for training and 1 for evaluation
     train_py_env = ClusterEnv()
-    eval_py_env = ClusterEnv()
+    eval_py_env = train_py_env
 
     # converting pyenv to tfenv
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
