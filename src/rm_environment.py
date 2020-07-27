@@ -143,7 +143,7 @@ class ClusterEnv(py_environment.PyEnvironment):
                 cost_reward = cost_normalized * constants.beta
 
                 epi_avg_job_duration = self.calculate_avg_time()
-                max_avg_job_duration = cluster.min_avg_job_duration + cluster.min_avg_job_duration * (constants.placement_penalty/100)
+                max_avg_job_duration = cluster.min_avg_job_duration + cluster.min_avg_job_duration * (constants.placement_penalty/100.0)
                 time_normalized = 1 - (epi_avg_job_duration-cluster.min_avg_job_duration) / (max_avg_job_duration-cluster.min_avg_job_duration)
                 time_reward = time_normalized * (1 - constants.beta)
 
